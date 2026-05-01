@@ -2,10 +2,10 @@
 source: tests/cli_list.rs
 expression: out
 ---
-d3 → C:\projects\d3
-  d  → Data  (uProject)
-  notes  → docs\notes
-  sd  → Shared/Data  (uProject)
-  src  → Source  (uProject)
-    pri  → Private  (uProject)
-    pub  → Public  (uProject)
+d3 -> C:\projects\d3
+  d  -> Data  (uProject)
+  notes  -> docs\notes
+  sd  -> Shared/Data  (uProject)
+  src  -> Source  (uProject)
+    pri  -> Private  (uProject)
+    pub  -> Public  (uProject)
