@@ -5,23 +5,28 @@ use std::path::Path;
 const HELP: &str = r#"Usage:
   j <root> [<sym>...] [-<alias> [args...]]       jump
   j -<alias> [args...]                            run alias in current directory
-  j :list [<root> [<sym>...]]                    show tree
-  j :add <root> [<sym>...] <path>                add/modify node (directory paths only)
+  j                                                show help (same as :help)
+
+Subcommands:
+  j :list [<root> [<sym>...]]                    show tree (no args = all roots + commands + templates)
+  j :add <root> [<sym>...] <path>                add/modify node; path is stored as-is (validated by :check)
   j :add <root> .                                add current directory as root
   j :rm <root> [<sym>...]                        remove node/root
   j :alias <name> <cmd>                          set alias
   j :alias --rm <name>                           remove alias
-  j :tpl-dump <root> [<sym>...] <tpl-name>       dump root/subtree children to template
+  j :tpl-dump [--force] <root> [<sym>...] <tpl>  dump root/subtree children to template (--force to overwrite)
   j :tpl-apply <root> [<sym>...] <tpl-name>      attach template to an existing configured root/node
-  j :tpl-rm <tpl-name>                           remove template
-  j :edit                                        open config in $EDITOR
+  j :tpl-rm [--force] <tpl-name>                 remove template (--force if still referenced)
+  j :edit                                        open config in $EDITOR (creates default config if missing)
   j :check                                       validate paths exist
   j :config-path                                 print config file path
   j :install <powershell|cmd>                    install shim
   j :uninstall <powershell|cmd>                  remove shim
-  j :init <powershell|cmd>                       print shim script
-  j :help | --help | -h
-  j :version | --version
+  j :init <powershell|cmd>                       print shim script to stdout
+  j :help | --help | -h                          show this help with roots summary
+  j :version | --version                         show version
+
+Exit codes: 0 = success, 1 = internal error, 2 = not found, 3 = config error, 4 = install error
 "#;
 
 pub fn help(cfg_path: &Path) -> Result<String, JError> {

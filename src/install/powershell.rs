@@ -209,10 +209,15 @@ r#"function j {{
 }}
 Register-ArgumentCompleter -CommandName j -ScriptBlock {{
     param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-    & '{exe}' :complete powershell $commandAst.ToString().Length $commandAst.ToString() |
-        ForEach-Object {{
-            [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-        }}
+    if ($commandAst) {{
+        $ln = $commandAst.ToString(); $cur = $ln.Length
+    }} else {{
+        $ln = $parameterName; $cur = [int]$wordToComplete
+    }}
+    $out = @(& '{exe}' :complete powershell $cur $ln 2>$null)
+    foreach ($x in $out) {{
+        if ($x) {{ [System.Management.Automation.CompletionResult]::new($x, $x, 'ParameterValue', $x) }}
+    }}
 }}
 "#, exe = exe_q)
 }

@@ -10,7 +10,8 @@ fn shim_script_references_absolute_exe() {
     assert!(body.contains("Invoke-Expression"));
     assert!(body.contains("Register-ArgumentCompleter"));
     assert!(!body.contains("-Native"), "PowerShell completer should not fall back to native filesystem completion");
-    assert!(body.contains("$commandAst.ToString().Length"));
+    assert!(body.contains("$commandAst.ToString()"), "completer must extract command line");
+    assert!(body.contains("$ln = $parameterName; $cur = [int]$wordToComplete"), "completer must have PS 5.1 fallback");
     // Smart dispatch: execute only jump scripts; display subcommand text via Write-Host.
     assert!(body.contains("-match '^Set-Location'"), "shim must guard Invoke-Expression with Set-Location check");
     assert!(body.contains("Write-Host"), "shim must display non-script output");

@@ -91,12 +91,26 @@ pub fn complete_rich(line: &str, cursor: usize, cfg: &Config) -> Vec<(String, St
 
     // 首 token：所有 root + 常用子命令
     if is_first {
-        let mut out: Vec<(String, String)> = cfg
+        let roots: Vec<(String, String)> = cfg
             .roots
             .iter()
             .filter(|(k, _)| k.starts_with(partial))
             .map(|(k, v)| (k.clone(), v.path.clone()))
             .collect();
+
+        // 精确匹配某个根 → 展开其子符号
+        if roots.len() == 1 && roots[0].0 == partial {
+            let root = cfg.roots.get(partial).unwrap();
+            let children = effective_children(root, cfg);
+            if !children.is_empty() {
+                return children
+                    .iter()
+                    .map(|(k, v)| (k.clone(), v.path.replace('\\', "/")))
+                    .collect();
+            }
+        }
+
+        let mut out = roots;
         for c in COMMON_SUBCMDS {
             if c.starts_with(partial) {
                 out.push(((*c).to_string(), String::new()));

@@ -3,3 +3,4 @@
 Cargo.lock.bak
 .insta-*.pending
 .claude/
+.changes/

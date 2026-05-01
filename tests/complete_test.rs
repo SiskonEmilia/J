@@ -135,10 +135,24 @@ fn add_returns_no_completion_when_symbol_path_cannot_be_resolved() {
 }
 
 #[test]
-fn rich_first_token_root_shows_absolute_path() {
+fn rich_exact_root_match_expands_children() {
+    // 精确匹配有子符号的根 → 返回子符号列表，不返回根本身
     let v = complete_rich("j d3", 4, &cfg());
-    let entry = v.iter().find(|(s, _)| s == "d3").expect("d3 not found");
-    assert_eq!(entry.1, "C:\\projects\\d3");
+    assert!(v.iter().any(|(s, _)| s == "d"));
+    assert!(v.iter().any(|(s, _)| s == "sd"));
+    assert!(v.iter().any(|(s, _)| s == "src"));
+    assert!(v.iter().any(|(s, _)| s == "notes"));
+    assert!(!v.iter().any(|(s, _)| s == "d3"));
+}
+
+#[test]
+fn rich_exact_root_match_returns_root_when_no_children() {
+    let src = r#"{"roots":{"leaf":{"path":"C:\\leaf"}},"templates":{},"commands":{}}"#;
+    let cfg = load_from_str_validated(src, "x").unwrap();
+    let v = complete_rich("j leaf", 6, &cfg);
+    assert_eq!(v.len(), 1);
+    assert_eq!(v[0].0, "leaf");
+    assert_eq!(v[0].1, "C:\\leaf");
 }
 
 #[test]
