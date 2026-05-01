@@ -20,6 +20,8 @@
 
 3. 新开一个 shell。PowerShell 打开新窗口；cmd 会继承新的 PATH。
 
+> **Tip**: 安装时 `j.exe` 的绝对路径会被写入 shim 内部。如果之后移动了 `j.exe`，需要重新执行 `:install`。
+
 也可以用 `:init <powershell|cmd>` 将 shim 脚本打印到 stdout，手动复制到自己的 profile 中。
 
 ## 配置
