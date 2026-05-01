@@ -1,0 +1,7 @@
+---
+source: tests/cli_jump.rs
+assertion_line: 17
+expression: out
+---
+Set-Location -LiteralPath 'C:\projects\d3\Data'
+& 'code' '--new-window'

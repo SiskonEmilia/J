@@ -1,0 +1,10 @@
+pub mod error;
+pub mod model;
+pub mod config;
+pub mod merge;
+pub mod resolve;
+pub mod emit;
+pub mod cli;
+pub mod subcmd;
+pub mod install;
+pub mod complete;

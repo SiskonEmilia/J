@@ -1,0 +1,5 @@
+/target
+*.pdb
+Cargo.lock.bak
+.insta-*.pending
+.claude/

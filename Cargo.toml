@@ -1,0 +1,27 @@
+[package]
+name = "j"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "j"
+path = "src/lib.rs"
+
+[[bin]]
+name = "j"
+path = "src/main.rs"
+
+[dependencies]
+jsonc-parser = { version = "0.26", features = ["cst", "serde"] }
+serde_json = "1.0"
+winreg = "0.55"
+windows = { version = "0.62", features = ["Win32_UI_WindowsAndMessaging"] }
+
+[dev-dependencies]
+insta = "1.41"
+tempfile = "3.14"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

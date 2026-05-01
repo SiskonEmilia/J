@@ -1,0 +1,31 @@
+{
+  "commands": {
+    "c":  "code",
+    "cc": "claude",
+    "g":  "git status"
+  },
+  "templates": {
+    "uProject": {
+      "children": {
+        "d":   { "path": "Data" },
+        "sd":  { "path": "Shared/Data" },
+        "src": {
+          "path": "Source",
+          "children": {
+            "pri": { "path": "Private" },
+            "pub": { "path": "Public" }
+          }
+        }
+      }
+    }
+  },
+  "roots": {
+    "d3": {
+      "path": "C:\\projects\\d3",
+      "templates": ["uProject"],
+      "children": {
+        "notes": { "path": "docs\\notes" }
+      }
+    }
+  }
+}
