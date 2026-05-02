@@ -1,8 +1,8 @@
-# j — Fast directory jump for Windows
+# j — Deterministic directory bookmarks for Windows
 
 [中文文档](README.zh-CN.md)
 
-A single-binary directory jump tool for PowerShell and cmd. Define a tree of named symbols pointing to directories, then jump anywhere in one short command. Supports nested symbol trees, reusable path templates, and command aliases.
+J is a deterministic directory bookmark tool for Windows shells (PowerShell and cmd). Define named project paths once, then jump to them with short, predictable commands. Unlike history-based tools such as zoxide or autojump, J does not learn or guess — it is for paths you already know and want to name. Ships as a single binary with no dependencies.
 
 ```
 j d3              # cd to the d3 root

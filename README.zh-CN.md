@@ -1,6 +1,6 @@
-# j — Windows 快速 cwd 跳转工具
+# j — Windows 确定性目录书签工具
 
-在 PowerShell / cmd 里用 `j <root> [<sym>...] [-<alias> args...]` 跳转目录并可选执行命令；也可以用 `j -<alias> [args...]` 在当前目录直接执行别名命令。支持嵌套符号树和可复用路径模板。
+J 是一个面向 Windows shell（PowerShell / cmd）的确定性目录书签工具。定义一次项目路径，之后用简短、可预测的命令跳转。与 zoxide、autojump 等基于历史的工具不同，J 不学习、不猜测——它只管理你明确命名的路径。单文件可执行，无依赖。
 
 ## 安装
 
