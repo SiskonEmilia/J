@@ -1,0 +1,41 @@
+name: Bug Report
+description: Report a bug
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `j :version`
+      placeholder: "0.2.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: shell
+    attributes:
+      label: Shell
+      options:
+        - PowerShell 5.1
+        - PowerShell 7+
+        - cmd
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug and how to reproduce it.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Config (if relevant)
+      description: Paste your `config.jsonc` (redact sensitive paths if needed).
+      render: jsonc

@@ -1,8 +1,12 @@
 [package]
 name = "j"
-version = "0.2.0"
+version = "0.2.1"
 description = "Fast directory jump tool for Windows PowerShell/cmd with nested symbol tree and reusable path templates"
 edition = "2021"
+license = "GPL-3.0-only"
+repository = "https://github.com/SiskonEmilia/J"
+authors = ["SiskonEmilia"]
+readme = "README.md"
 
 [lib]
 name = "j"
