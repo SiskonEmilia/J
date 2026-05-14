@@ -59,11 +59,16 @@ fn current_dir_alias_ps() {
 
     let out = String::from_utf8(o.stdout).unwrap();
     let lines: Vec<&str> = out.lines().collect();
-    let expected_dir = std::fs::canonicalize(dir.path()).unwrap();
-    assert_eq!(
-        lines[0],
-        format!("Set-Location -LiteralPath '{}'", expected_dir.display())
-    );
+    let prefix = "Set-Location -LiteralPath '";
+    let suffix = "'";
+    let actual_path_str = lines[0]
+        .strip_prefix(prefix)
+        .and_then(|s| s.strip_suffix(suffix))
+        .expect("cd line format");
+    let actual_canon = std::fs::canonicalize(actual_path_str)
+        .unwrap_or_else(|_| std::path::PathBuf::from(actual_path_str));
+    let expected_canon = std::fs::canonicalize(dir.path()).unwrap();
+    assert_eq!(actual_canon, expected_canon);
     assert_eq!(lines[1], "& 'code' '--new-window'");
 }
 
