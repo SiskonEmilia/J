@@ -4,46 +4,63 @@ J 是一个面向 Windows 和 macOS shell（PowerShell / cmd / zsh / bash / sh�
 
 ## 安装
 
-1. 把 `j.exe` 放到任意稳定目录，例如 `C:\tools\j\j.exe`。
-2. 安装 shim：
+### 下载预编译版本
 
-   ```powershell
-   C:\tools\j\j.exe :install powershell
-   ```
+[Releases 页面](https://github.com/SiskonEmilia/J/releases) 提供 **Windows** 和 **macOS** 预编译二进制：
 
-   ```cmd
-   C:\tools\j\j.exe :install cmd
-   ```
+- `j-{version}-x86_64-pc-windows-msvc.exe`
+- `j-{version}-aarch64-apple-darwin`
 
-   ```sh
-   /usr/local/bin/j :install zsh
-   ```
+把二进制放到稳定目录（Windows：`C:\tools\j\j.exe`，macOS：`/usr/local/bin/j`），然后安装 shim：
 
-   - PowerShell：同时写入 `WindowsPowerShell`（5.1）和 `PowerShell`（7+）两个 profile，覆盖所有版本。
-   - cmd：在 `%USERPROFILE%\.config\j\bin\` 生成 `j.bat`，并将该目录加入用户 PATH。
-   - zsh / bash / sh：分别写入 `~/.zshrc`、`~/.bashrc` 或 `~/.profile`。
+```powershell
+# Windows (PowerShell)
+C:\tools\j\j.exe :install powershell
+```
 
-3. 新开一个 shell。PowerShell 打开新窗口；cmd 会继承新的 PATH。
+```cmd
+rem Windows (cmd)
+C:\tools\j\j.exe :install cmd
+```
 
-> **Tip**: 安装时 `j.exe` 的绝对路径会被写入 shim 内部。如果之后移动了 `j.exe`，需要重新执行 `:install`。
+```sh
+# macOS
+/usr/local/bin/j :install zsh       # ~/.zshrc
+/usr/local/bin/j :install bash      # ~/.bashrc
+```
 
-也可以用 `:init <powershell|cmd|zsh|bash|sh>` 将 shim 脚本打印到 stdout，手动复制到自己的 profile 中。
+- **PowerShell**：同时写入 `WindowsPowerShell`（5.1）和 `PowerShell`（7+）两个 profile。
+- **cmd**：在 `%USERPROFILE%\.config\j\bin\` 生成 `j.bat`，并将该目录加入用户 PATH。
+- **zsh / bash**：写入 shim 函数 + Tab 补全到 profile。`:install zsh` 同时注册 `compdef _j j`；`:install bash` 同时注册 `complete -F _j_complete_bash j`。
+- **sh**：写入 shim 到 `~/.profile`（无补全）。
+
+新开终端即可使用。
+
+> **Tip**: 安装时二进制文件的绝对路径会被写入 shim 内部。如果移动了二进制文件，需要重新执行 `:install`。
+
+也可以用 `:init <shell>` 将 shim 脚本打印到 stdout，手动嵌入。
+
+### 从源码构建
+
+```sh
+cargo build --release
+# 产物：target/release/j  (macOS)  或  target/release/j.exe  (Windows)
+```
 
 ## 配置
 
-配置文件位置：Windows 为 `%USERPROFILE%\.config\j\config.jsonc`，macOS / Linux 为 `~/.config/j/config.jsonc`（可用环境变量 `J_CONFIG` 覆盖）。
+配置文件位置：Windows 为 `%USERPROFILE%\.config\j\config.jsonc`，macOS 为 `~/.config/j/config.jsonc`（可用 `J_CONFIG` 环境变量覆盖）。
 
 ```jsonc
 {
   // 全局扁平命令别名；调用时 -<name> 会在跳转后执行 "<cmd>" 并追加透传参数
-  // 也可直接 `j -<name>`，表示在当前目录执行 "<cmd>"
   "commands": {
     "c":  "code",
-    "cc": "claude",
+    "o":  "open .",
     "g":  "git status"
   },
 
-  // 可复用的路径模板；模板及其子节点的 children 里都不能再 mixin 其他模板
+  // 可复用的路径模板；模板及其子节点的 children 里不能再 mixin 其他模板
   "templates": {
     "uProject": {
       "children": {
@@ -60,167 +77,103 @@ J 是一个面向 Windows 和 macOS shell（PowerShell / cmd / zsh / bash / sh�
     }
   },
 
-  // 跳转根。path 必须绝对。
+  // 跳转根。path 必须绝对（POSIX 或 Windows 风格皆可）
   "roots": {
-    "d3": {
-      "path": "C:\\projects\\d3",
+    "proj": {
+      "path": "/Users/me/projects/myproject",
+      // Windows 上: "path": "C:\\projects\\myproject",
       "templates": ["uProject"],
       "children": {
-        "notes": { "path": "docs\\notes" }
+        "notes": { "path": "docs/notes" }
       }
     }
   }
 }
 ```
 
-合并语义：节点的 `children` 视图 = `templates` 按数组顺序依次展开 → 节点自身 children 覆盖。同名子符号：多个模板之间后者赢，节点自身赢模板；非叶节点（带 children）深合并。`:list` 输出中模板来源的符号会标注 `(template_name)`。
+合并语义：节点的 `children` 视图 = `templates` 按数组顺序依次展开 → 节点自身 children 覆盖。同名子符号：多个模板之间后者赢，节点自身赢模板；非叶节点深合并。`:list` 输出中模板来源的符号会标注 `(template_name)`。
 
 ## 用法
 
 ```
-j d3                       # 跳到 d3 根目录
-j d3 d                     # → C:\projects\d3\Data（d 来自 uProject）
-j d3 src pri               # → C:\projects\d3\Source\Private
-j d3 d -c                  # cd 后执行 `code`
-j d3 d -c --new-window     # 等效 `code --new-window`（别名后参数原样透传）
-j -c --new-window          # 在当前目录执行 `code --new-window`
-j                          # 显示帮助（等同 j :help）
-j --help                   # 同上
-j --version                # 显示版本号
-j :tpl-dump d3 sharedTpl   # 将 d3 的整棵 children 封装成 template
-j :tpl-apply d4 sharedTpl  # 将 sharedTpl 挂到 d4 root 上
-j :tpl-apply d4 work sharedTpl  # 将 sharedTpl 挂到 d4/work 节点上
+j proj                      # 跳到 proj 根目录
+j proj d                    # → proj/Data（d 来自 uProject 模板）
+j proj src pri              # → proj/Source/Private
+j proj -c                   # cd 后执行 `code`
+j proj -c --new-window      # 等效 `code --new-window`（别名后参数原样透传）
+j -c --new-window           # 在当前目录执行 `code --new-window`
+j                           # 显示帮助（等同 j :help）
+j --help                    # 同上
+j --version                 # 显示版本号
+j :tpl-dump proj sharedTpl  # 将 proj 的合并 children 封装成模板
+j :tpl-apply proj2 sharedTpl # 将 sharedTpl 挂到另一 root
 ```
 
-PowerShell 下，`j` 的 Tab 补全支持根名、子符号、别名和 `:add` 路径段：
-- 首 token：补全所有根名 + 子命令
-- 后续 token：逐级补全子符号
-- `:add` 路径补全：先匹配子符号，无匹配时按已解析目录下的子目录补全（只列目录，行为接近 `cd`）
-- 首 token 精确匹配某个根名时，展开该根的子符号供继续下钻
+### Tab 补全
 
-把 template 挂到另一个 root / 节点上：在目标节点配置 `templates` 数组即可。`:tpl-apply` 要求目标节点已在配置中存在。
+**PowerShell**：补全根名、子命令、子符号、别名、`:add` 路径段。首 token 精确匹配根名时展开子符号。`:add` 先匹配符号再回退到子目录。
+
+**zsh / bash**：`:install zsh` / `:install bash` 时自动安装。覆盖根名、子符号、冒号子命令、别名、`install/uninstall/init` 的 shell 名、`:add` 目录回退。
+
+### 别名中的引号
+
+别名命令支持类 shell 的引号处理（单引号、双引号、反斜杠转义）：
 
 ```jsonc
-{
-  "templates": {
-    "sharedTpl": {
-      "children": {
-        "notes": { "path": "docs\\notes" }
-      }
-    }
-  },
-  "roots": {
-    "d3": {
-      "path": "C:\\projects\\d3",
-      "templates": ["sharedTpl"]
-    },
-    "d4": {
-      "path": "C:\\projects\\d4",
-      "children": {
-        "work": {
-          "path": "workspace",
-          "templates": ["sharedTpl"]
-        }
-      }
-    }
-  }
+"commands": {
+  "vsc": "open -a \"Visual Studio Code\"",
+  "echo": "echo 'hello world'",
+  "path": "ls /Users/me/My\\ Documents"
 }
 ```
 
 ### 子命令（冒号前缀，避免和 root 命名冲突）
 
 ```
-j :list [<root> [<sym>...]]                # 树形打印（合并视图，模板来源标注 template_name）；无参 = 打印全部 roots + commands + templates
-j :add <root> [<sym>...] <path>            # 新增/覆写节点；路径存原始字符串，`:check` 校验是否存在；只传 <root> <absPath> = 新增 root
-j :add <root> .                            # 将当前目录记为 root
-j :rm <root> [<sym>...]                    # 删除节点或 root
-j :alias <name> <command>                  # 设置别名
-j :alias --rm <name>                       # 删除别名
-j :tpl-dump [--force] <root> [<sym>...] <tpl>  # 把 root 或目标节点的合并后 children 封装为模板（--force 覆写已有模板）
-j :tpl-apply <root> [<sym>...] <tpl>       # 把模板挂到已有配置节点（目标节点必须已存在）
-j :tpl-rm [--force] <tpl>                  # 删除模板（被引用时需 --force，会同时清理引用）
-j :edit                                    # 用 $EDITOR / notepad 打开配置（配置不存在时自动创建默认配置）
-j :check                                   # 校验所有路径存在
-j :config-path                             # 打印配置文件路径
-j :install   <powershell|cmd|zsh|bash|sh>  # 幂等写入 shim
-j :uninstall <powershell|cmd|zsh|bash|sh>  # 反向移除
-j :init      <powershell|cmd|zsh|bash|sh>  # 打印 shim 脚本到 stdout（手动嵌入用）
-j :help | --help | -h                      # 显示帮助（末尾追加 roots 摘要）
-j :version | --version                     # 显示版本号
+j :list [<root> [<sym>...]]                     # 树形打印（合并视图，模板来源标注）；无参打印全部
+j :add <root> [<sym>...] <path>                 # 新增/覆写节点；只传 <root> <absPath> = 新增 root
+j :add <root> .                                 # 将当前目录记为 root
+j :rm <root> [<sym>...]                         # 删除节点或 root
+j :alias <name> <command>                       # 设置别名
+j :alias --rm <name>                            # 删除别名
+j :tpl-dump [--force] <root> [<sym>...] <tpl>   # 导出合并 children 为模板
+j :tpl-apply <root> [<sym>...] <tpl>            # 挂模板到已有节点
+j :tpl-rm [--force] <tpl>                       # 删除模板
+j :edit                                         # 用 $EDITOR 打开配置
+j :check                                        # 校验所有路径存在
+j :config-path                                  # 打印配置文件路径
+j :install   <shell> [--profile <path>]         # 幂等写入 shim
+j :uninstall <shell> [--profile <path>]         # 反向移除
+j :init      <shell>                            # 打印 shim 脚本到 stdout
+j :help | --help | -h                           # 显示帮助
+j :version | --version                          # 显示版本号
 ```
 
-## macOS 使用说明
-
-### 构建
-
-```sh
-cargo build --release
-# 产物：target/release/j
-```
-
-### 安装
-
-把 `j` 放到稳定目录（例如 `/usr/local/bin/j`），然后安装 shim：
-
-```sh
-/usr/local/bin/j :install zsh     # 写入 ~/.zshrc
-/usr/local/bin/j :install bash    # 写入 ~/.bashrc
-```
-
-打开新终端窗口即可使用。shim 内部写入了 `j` 的绝对路径——如果移动了二进制文件，需重新执行 `:install`。
-
-### Tab 补全
-
-- **zsh**：`:install zsh` 同时安装 `_j` 补全函数和 `compdef` 注册。新开 shell 后生效。
-- **bash**：`:install bash` 同时安装 `_j_complete_bash` 补全函数和 `complete -F` 注册。新开 shell 后生效。
-- 补全覆盖：根名、子符号、冒号子命令、别名、`:add` 目录回退。
-
-### 配置
-
-配置文件位置：`~/.config/j/config.jsonc`（可通过 `J_CONFIG` 环境变量覆盖）。
-
-```jsonc
-{
-  "commands": {
-    "c": "code",
-    "o": "open .",
-    "g": "git status"
-  },
-  "templates": { /* 与 Windows 相同 */ },
-  "roots": {
-    "proj": { "path": "/Users/me/projects/myproject" }
-  }
-}
-```
-
-根路径使用 POSIX 风格绝对路径（如 `/Users/me/work`）。Windows 风格路径（`C:\...`）同样有效，保留反斜杠分隔符。
-
-### 别名中的引号
-
-别名命令支持类 shell 的引号处理：
-
-```jsonc
-"commands": {
-  "vsc": "open -a \"Visual Studio Code\"",
-  "echo": "echo 'hello world'"
-}
-```
-
-### 自定义 Profile 路径
-
-POSIX shell 支持指定自定义 profile：
+POSIX shell 可用 `--profile` 指定自定义 profile：
 
 ```sh
 j :install zsh --profile ~/.my_custom_zshrc
-j :uninstall zsh --profile ~/.my_custom_zshrc
 ```
 
-### 常见问题
+## 卸载
+
+```powershell
+# Windows
+C:\tools\j\j.exe :uninstall powershell
+C:\tools\j\j.exe :uninstall cmd
+```
+
+```sh
+# macOS
+/usr/local/bin/j :uninstall zsh
+```
+
+## 常见问题
 
 | 现象 | 解决方法 |
 |-----|---------|
 | `command not found: j` | 确保二进制文件在 PATH 稳定目录中，或先安装 shim |
-| shim 未加载 | 打开新终端；确认对应的 profile 文件（`~/.zshrc`、`~/.bashrc`）被 source |
+| shim 未加载 | 打开新终端；确认对应的 profile 文件被 source |
 | 移动二进制文件后失效 | 重新执行 `:install`——shim 中写入了绝对路径 |
 | Tab 补全不生效 | `:install` 后新开 shell；zsh 下确保 `compinit` 正常运行 |
 
@@ -229,20 +182,9 @@ j :uninstall zsh --profile ~/.my_custom_zshrc
 - POSIX shell 无 PowerShell 交互式候选 UI（直接运行 `j` 无参数会显示帮助）。
 - 别名命令在 Rust 端做词法分析后发射，不会在 shell 中 `eval`。
 
-## 卸载
-
-```powershell
-C:\tools\j\j.exe :uninstall powershell
-C:\tools\j\j.exe :uninstall cmd
-```
-
-```sh
-/usr/local/bin/j :uninstall zsh
-```
-
 ## 工程说明
 
-- Rust 2021 edition，单文件 `j.exe`，启动 <10ms。
+- Rust 2021 edition，单文件二进制，启动 <10ms。
 - 核心纯函数式：argv + config → 发射目标 shell 脚本到 stdout，shim eval 之。
 - 配置手写友好（JSONC，保留注释和键顺序的 CST 回写）。
 
@@ -256,17 +198,15 @@ C:\tools\j\j.exe :uninstall cmd
 | 3  | 配置错误 |
 | 4  | 安装错误 |
 
-### 从源码构建
-
-```
-cargo build --release
-# 产物：target/release/j.exe
-```
-
 ### 运行测试
 
-```
+```sh
 cargo test                                   # unit + integration tests
-cmd.exe /c scripts/integration.bat           # cmd shim smoke test
-powershell -File scripts/integration.ps1     # PowerShell shim smoke test
+cmd.exe /c scripts/integration.bat           # cmd shim smoke test (Windows)
+powershell -File scripts/integration.ps1     # PowerShell shim smoke test (Windows)
+bash scripts/e2e-macos.sh                    # POSIX E2E smoke test (macOS)
 ```
+
+## License
+
+本项目使用 [GNU General Public License v3.0](LICENSE)。
