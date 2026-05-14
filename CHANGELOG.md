@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0] - 2026-05-14
+
+### Added
+- macOS first-class support: zsh/bash/sh shim install, tab completion (zsh + bash), POSIX path handling.
+- Shell-like alias tokenizer: supports single/double quotes and backslash escaping in command aliases.
+- `:install/:uninstall zsh|bash|sh --profile <path>` option for custom config profiles.
+- macOS CI matrix in GitHub Actions with E2E smoke test.
+
+### Fixed
+- Alias commands now tokenize properly instead of naive whitespace splitting.
+- Windows CI path comparison compatibility with `canonicalize`.
+
 ## [0.2.0] - 2025-05-01
 
 ### Added
