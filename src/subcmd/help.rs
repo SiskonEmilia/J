@@ -20,9 +20,9 @@ Subcommands:
   j :edit                                        open config in $EDITOR (creates default config if missing)
   j :check                                       validate paths exist
   j :config-path                                 print config file path
-  j :install <powershell|cmd>                    install shim
-  j :uninstall <powershell|cmd>                  remove shim
-  j :init <powershell|cmd>                       print shim script to stdout
+  j :install <powershell|cmd|zsh|bash|sh>        install shim
+  j :uninstall <powershell|cmd|zsh|bash|sh>      remove shim
+  j :init <powershell|cmd|zsh|bash|sh>           print shim script to stdout
   j :help | --help | -h                          show this help with roots summary
   j :version | --version                         show version
 

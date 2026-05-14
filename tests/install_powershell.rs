@@ -1,6 +1,8 @@
-use j::install::powershell::{all_profile_paths, build_shim_script, install_into_file, uninstall_from_file};
-use tempfile::tempdir;
+use j::install::powershell::{
+    all_profile_paths, build_shim_script, install_into_file, uninstall_from_file,
+};
 use std::fs;
+use tempfile::tempdir;
 
 #[test]
 fn shim_script_references_absolute_exe() {
@@ -9,15 +11,39 @@ fn shim_script_references_absolute_exe() {
     assert!(body.contains("function j"));
     assert!(body.contains("Invoke-Expression"));
     assert!(body.contains("Register-ArgumentCompleter"));
-    assert!(!body.contains("-Native"), "PowerShell completer should not fall back to native filesystem completion");
-    assert!(body.contains("$commandAst.ToString()"), "completer must extract command line");
-    assert!(body.contains("$ln = $parameterName; $cur = [int]$wordToComplete"), "completer must have PS 5.1 fallback");
+    assert!(
+        !body.contains("-Native"),
+        "PowerShell completer should not fall back to native filesystem completion"
+    );
+    assert!(
+        body.contains("$commandAst.ToString()"),
+        "completer must extract command line"
+    );
+    assert!(
+        body.contains("$ln = $parameterName; $cur = [int]$wordToComplete"),
+        "completer must have PS 5.1 fallback"
+    );
     // Smart dispatch: execute only jump scripts; display subcommand text via Write-Host.
-    assert!(body.contains("-match '^Set-Location'"), "shim must guard Invoke-Expression with Set-Location check");
-    assert!(body.contains("Write-Host"), "shim must display non-script output");
-    assert!(body.contains(":complete-rich"), "interactive mode must call :complete-rich");
-    assert!(body.contains("ReadKey"), "interactive mode must use ReadKey for input");
-    assert!(body.contains("_jBuf"), "interactive mode must maintain input buffer");
+    assert!(
+        body.contains("-match '^Set-Location'"),
+        "shim must guard Invoke-Expression with Set-Location check"
+    );
+    assert!(
+        body.contains("Write-Host"),
+        "shim must display non-script output"
+    );
+    assert!(
+        body.contains(":complete-rich"),
+        "interactive mode must call :complete-rich"
+    );
+    assert!(
+        body.contains("ReadKey"),
+        "interactive mode must use ReadKey for input"
+    );
+    assert!(
+        body.contains("_jBuf"),
+        "interactive mode must maintain input buffer"
+    );
 }
 
 #[test]
@@ -41,10 +67,25 @@ fn install_idempotent() {
 fn all_profile_paths_covers_both_ps_versions() {
     let paths = all_profile_paths().unwrap();
     let strs: Vec<String> = paths.iter().map(|p| p.display().to_string()).collect();
-    assert!(strs.iter().any(|s| s.contains("WindowsPowerShell")),
-        "must include Windows PowerShell 5.1 path");
-    assert!(strs.iter().any(|s| s.contains(r"PowerShell\Microsoft")),
-        "must include PowerShell 7 path");
+    #[cfg(windows)]
+    {
+        assert!(
+            strs.iter().any(|s| s.contains("WindowsPowerShell")),
+            "must include Windows PowerShell 5.1 path"
+        );
+        assert!(
+            strs.iter().any(|s| s.contains(r"PowerShell\Microsoft")),
+            "must include PowerShell 7 path"
+        );
+    }
+    #[cfg(not(windows))]
+    {
+        assert_eq!(strs.len(), 1);
+        assert!(
+            strs[0].contains(".config/powershell/Microsoft.PowerShell_profile.ps1"),
+            "must include PowerShell profile path, got {strs:?}"
+        );
+    }
 }
 
 /// Verifies the emitted shim parses as valid PowerShell. Guards against
@@ -53,11 +94,15 @@ fn all_profile_paths_covers_both_ps_versions() {
 #[cfg(windows)]
 #[test]
 fn shim_script_is_valid_powershell_syntax() {
-    let ps_host = ["pwsh.exe", "powershell.exe"]
-        .into_iter()
-        .find(|exe| std::process::Command::new(exe)
-            .arg("-NoProfile").arg("-Command").arg("exit 0")
-            .output().map(|o| o.status.success()).unwrap_or(false));
+    let ps_host = ["pwsh.exe", "powershell.exe"].into_iter().find(|exe| {
+        std::process::Command::new(exe)
+            .arg("-NoProfile")
+            .arg("-Command")
+            .arg("exit 0")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+    });
     let Some(ps_host) = ps_host else {
         eprintln!("skipping: no PowerShell host on PATH");
         return;
@@ -78,10 +123,12 @@ fn shim_script_is_valid_powershell_syntax() {
         .args(["-NoProfile", "-Command", &parse_cmd])
         .output()
         .unwrap();
-    assert!(out.status.success(),
+    assert!(
+        out.status.success(),
         "shim failed to parse under {ps_host}:\nstderr={}\nstdout={}",
         String::from_utf8_lossy(&out.stderr),
-        String::from_utf8_lossy(&out.stdout));
+        String::from_utf8_lossy(&out.stdout)
+    );
 }
 
 #[test]

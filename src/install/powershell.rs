@@ -6,7 +6,7 @@ use std::path::Path;
 pub fn build_shim_script(exe_abs: &str) -> String {
     let exe_q = exe_abs.replace('\'', "''");
     format!(
-r#"function j {{
+        r#"function j {{
     $script:_jExe = '{exe}'
     function _jRun($toks) {{
         if (-not $toks -or $toks.Count -eq 0) {{ return }}
@@ -219,7 +219,9 @@ Register-ArgumentCompleter -CommandName j -ScriptBlock {{
         if ($x) {{ [System.Management.Automation.CompletionResult]::new($x, $x, 'ParameterValue', $x) }}
     }}
 }}
-"#, exe = exe_q)
+"#,
+        exe = exe_q
+    )
 }
 
 pub fn install_into_file(profile: &Path, exe_abs: &str) -> Result<(), JError> {
@@ -248,24 +250,48 @@ pub fn uninstall_from_file(profile: &Path) -> Result<(), JError> {
 }
 
 pub fn default_profile_path() -> Result<std::path::PathBuf, JError> {
-    let home = std::env::var("USERPROFILE").map_err(|_| JError::InstallError {
-        msg: "USERPROFILE not set".into(),
-    })?;
-    Ok(std::path::PathBuf::from(home)
-        .join("Documents")
-        .join("PowerShell")
-        .join("Microsoft.PowerShell_profile.ps1"))
+    #[cfg(not(windows))]
+    {
+        let home = std::env::var("HOME").map_err(|_| JError::InstallError {
+            msg: "HOME not set".into(),
+        })?;
+        Ok(std::path::PathBuf::from(home)
+            .join(".config")
+            .join("powershell")
+            .join("Microsoft.PowerShell_profile.ps1"))
+    }
+
+    #[cfg(windows)]
+    {
+        let home = std::env::var("USERPROFILE").map_err(|_| JError::InstallError {
+            msg: "USERPROFILE not set".into(),
+        })?;
+        Ok(std::path::PathBuf::from(home)
+            .join("Documents")
+            .join("PowerShell")
+            .join("Microsoft.PowerShell_profile.ps1"))
+    }
 }
 
 /// Returns profile paths for both Windows PowerShell 5.1 and PowerShell 7.
 /// Install targets all of them so the shim works regardless of PS version.
 pub fn all_profile_paths() -> Result<Vec<std::path::PathBuf>, JError> {
-    let home = std::env::var("USERPROFILE").map_err(|_| JError::InstallError {
-        msg: "USERPROFILE not set".into(),
-    })?;
-    let base = std::path::PathBuf::from(home).join("Documents");
-    Ok(vec![
-        base.join("WindowsPowerShell").join("Microsoft.PowerShell_profile.ps1"),
-        base.join("PowerShell").join("Microsoft.PowerShell_profile.ps1"),
-    ])
+    #[cfg(not(windows))]
+    {
+        Ok(vec![default_profile_path()?])
+    }
+
+    #[cfg(windows)]
+    {
+        let home = std::env::var("USERPROFILE").map_err(|_| JError::InstallError {
+            msg: "USERPROFILE not set".into(),
+        })?;
+        let base = std::path::PathBuf::from(home).join("Documents");
+        Ok(vec![
+            base.join("WindowsPowerShell")
+                .join("Microsoft.PowerShell_profile.ps1"),
+            base.join("PowerShell")
+                .join("Microsoft.PowerShell_profile.ps1"),
+        ])
+    }
 }

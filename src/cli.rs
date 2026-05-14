@@ -1,7 +1,11 @@
 use crate::error::JError;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Shell { PowerShell, Cmd }
+pub enum Shell {
+    PowerShell,
+    Cmd,
+    Posix,
+}
 
 #[derive(Debug)]
 pub enum Invocation {
@@ -25,20 +29,34 @@ pub fn parse(argv: &[&str]) -> Result<Invocation, JError> {
         if let Some(v) = a.strip_prefix("--shell=") {
             shell = Some(match v {
                 "powershell" => Shell::PowerShell,
-                "cmd"        => Shell::Cmd,
-                _ => return Err(JError::Internal { msg: format!("unknown --shell value '{}'", v) }),
+                "cmd" => Shell::Cmd,
+                "zsh" | "bash" | "sh" | "posix" => Shell::Posix,
+                _ => {
+                    return Err(JError::Internal {
+                        msg: format!("unknown --shell value '{}'", v),
+                    })
+                }
             });
         } else if *a == "--help" || *a == "-h" {
-            return Ok(Invocation::Subcmd { name: "help".into(), args: Vec::new() });
+            return Ok(Invocation::Subcmd {
+                name: "help".into(),
+                args: Vec::new(),
+            });
         } else if *a == "--version" {
-            return Ok(Invocation::Subcmd { name: "version".into(), args: Vec::new() });
+            return Ok(Invocation::Subcmd {
+                name: "version".into(),
+                args: Vec::new(),
+            });
         } else {
             rest.push((*a).to_string());
         }
     }
 
     if rest.is_empty() {
-        return Ok(Invocation::Subcmd { name: "help".into(), args: Vec::new() });
+        return Ok(Invocation::Subcmd {
+            name: "help".into(),
+            args: Vec::new(),
+        });
     }
 
     // 2) subcommand if first token starts with ':'
@@ -65,5 +83,10 @@ pub fn parse(argv: &[&str]) -> Result<Invocation, JError> {
         }
     }
 
-    Ok(Invocation::Jump { positional, alias, alias_args, shell })
+    Ok(Invocation::Jump {
+        positional,
+        alias,
+        alias_args,
+        shell,
+    })
 }

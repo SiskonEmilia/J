@@ -5,7 +5,7 @@ use std::path::Path;
 pub fn validate(c: &Config) -> Result<(), JError> {
     for (name, node) in &c.roots {
         check_symbol(name, "root name")?;
-        if !Path::new(&node.path).is_absolute() {
+        if !is_absolute_path(&node.path) {
             return Err(JError::ConfigInvalid {
                 msg: format!("root '{}' path '{}' is not absolute", name, node.path),
             });
@@ -23,6 +23,18 @@ pub fn validate(c: &Config) -> Result<(), JError> {
         check_symbol(name, "alias name")?;
     }
     Ok(())
+}
+
+fn is_absolute_path(path: &str) -> bool {
+    Path::new(path).is_absolute() || is_windows_drive_absolute(path)
+}
+
+fn is_windows_drive_absolute(path: &str) -> bool {
+    let bytes = path.as_bytes();
+    bytes.len() >= 3
+        && bytes[0].is_ascii_alphabetic()
+        && bytes[1] == b':'
+        && (bytes[2] == b'\\' || bytes[2] == b'/')
 }
 
 fn walk_node(n: &Node, c: &Config, ctx: &str) -> Result<(), JError> {

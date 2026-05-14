@@ -27,6 +27,18 @@ fn jump_cmd_emit() {
 }
 
 #[test]
+fn jump_zsh_emit() {
+    let (out, err, code) = run(&["--shell=zsh", "d3", "d", "-c", "--new-window"]);
+    assert_eq!(code, 0, "stderr={}", err);
+    let normalized = out.replace('\\', "/");
+    assert!(
+        normalized.contains("cd -- 'C:/projects/d3/Data'"),
+        "out={out}"
+    );
+    assert!(out.contains("'code' '--new-window'"), "out={out}");
+}
+
+#[test]
 fn current_dir_alias_ps() {
     let dir = tempdir().unwrap();
     let fixture =
@@ -47,9 +59,10 @@ fn current_dir_alias_ps() {
 
     let out = String::from_utf8(o.stdout).unwrap();
     let lines: Vec<&str> = out.lines().collect();
+    let expected_dir = std::fs::canonicalize(dir.path()).unwrap();
     assert_eq!(
         lines[0],
-        format!("Set-Location -LiteralPath '{}'", dir.path().display())
+        format!("Set-Location -LiteralPath '{}'", expected_dir.display())
     );
     assert_eq!(lines[1], "& 'code' '--new-window'");
 }

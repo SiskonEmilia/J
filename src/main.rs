@@ -30,8 +30,7 @@ fn run(argv: &[&str]) -> Result<(), JError> {
             shell,
         } => {
             let shell = shell.ok_or_else(|| JError::Internal {
-                msg: "jump form requires --shell=<powershell|cmd> (normally injected by shim)"
-                    .into(),
+                msg: "jump form requires --shell=<powershell|cmd|zsh|bash|sh> (normally injected by shim)".into(),
             })?;
             let cfg_path = config_path();
             let src = std::fs::read_to_string(&cfg_path).map_err(|e| JError::ConfigError {
@@ -57,6 +56,7 @@ fn run(argv: &[&str]) -> Result<(), JError> {
             let shell_enum = match shell {
                 Shell::PowerShell => emit::Shell::PowerShell,
                 Shell::Cmd => emit::Shell::Cmd,
+                Shell::Posix => emit::Shell::Posix,
             };
             let script = emit::emit(shell_enum, &r.abs_path, r.post_argv.as_deref());
             print!("{}", script);
@@ -74,7 +74,9 @@ pub fn config_path() -> std::path::PathBuf {
     if let Ok(p) = std::env::var("J_CONFIG") {
         return std::path::PathBuf::from(p);
     }
-    let home = std::env::var("USERPROFILE").unwrap_or_default();
+    let home = std::env::var("USERPROFILE")
+        .or_else(|_| std::env::var("HOME"))
+        .unwrap_or_default();
     std::path::PathBuf::from(home)
         .join(".config")
         .join("j")
