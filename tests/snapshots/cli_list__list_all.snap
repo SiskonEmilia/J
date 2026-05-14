@@ -11,9 +11,12 @@ d3 -> C:\projects\d3
     pub  -> Public  (uProject)
 
 Commands:
+  -bse = a\ b
   -c = code
   -cc = claude
   -g = git status
+  -sq = echo 'hello world'
+  -vsc = open -a "Visual Studio Code"
 
 Templates:
   uProject

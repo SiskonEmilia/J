@@ -129,6 +129,86 @@ j :help | --help | -h                      # show help
 j :version | --version                     # print version
 ```
 
+## macOS Usage
+
+### Building
+
+```sh
+cargo build --release
+# output: target/release/j
+```
+
+### Installation
+
+Place `j` in a stable directory (e.g. `/usr/local/bin/j`), then install the shim:
+
+```sh
+/usr/local/bin/j :install zsh     # writes to ~/.zshrc
+/usr/local/bin/j :install bash    # writes to ~/.bashrc
+```
+
+Open a new terminal window. The shim bakes in the absolute path to `j` — if you move the binary, re-run `:install`.
+
+### Tab Completion
+
+- **zsh**: `:install zsh` installs `_j` completion with `compdef`. Works after opening a new shell.
+- **bash**: `:install bash` installs `_j_complete_bash` via `complete -F`. Works after opening a new shell.
+- Completion covers root names, child symbols, colon subcommands, aliases, and `:add` directory fallback.
+
+### Configuration
+
+Config file: `~/.config/j/config.jsonc` (override with `J_CONFIG` env var).
+
+```jsonc
+{
+  "commands": {
+    "c": "code",
+    "o": "open .",
+    "g": "git status"
+  },
+  "templates": { /* same as Windows */ },
+  "roots": {
+    "proj": { "path": "/Users/me/projects/myproject" }
+  }
+}
+```
+
+Root paths use POSIX-style absolute paths (e.g. `/Users/me/work`). Windows-style roots (`C:\...`) are also valid and preserve backslash separators.
+
+### Alias Quoting
+
+Alias commands support shell-like quoting:
+
+```jsonc
+"commands": {
+  "vsc": "open -a \"Visual Studio Code\"",
+  "echo": "echo 'hello world'"
+}
+```
+
+### Custom Profile Path
+
+For POSIX shells you can specify a custom profile:
+
+```sh
+j :install zsh --profile ~/.my_custom_zshrc
+j :uninstall zsh --profile ~/.my_custom_zshrc
+```
+
+### Troubleshooting
+
+| Symptom | Fix |
+|---------|-----|
+| `command not found: j` | Ensure the binary is in a stable PATH directory, or install the shim |
+| Shim not loaded | Open a new terminal; verify the right profile file (`~/.zshrc`, `~/.bashrc`) is sourced |
+| Binary moved after install | Re-run `:install` — the shim bakes in the absolute path |
+| Tab completion not working | Open a new shell after `:install`; for zsh, ensure `compinit` runs |
+
+### Known Limitations
+
+- POSIX shells do not have the PowerShell interactive candidate UI (run `j` with no args to see help instead).
+- Alias commands are tokenized before shell emission — not `eval`'d.
+
 ## Uninstallation
 
 ```powershell

@@ -109,7 +109,9 @@ fn resolve_alias_argv(
         name: a.to_string(),
         available: c.commands.keys().cloned().collect(),
     })?;
-    let mut argv: Vec<String> = cmd_str.split_whitespace().map(String::from).collect();
+    let mut argv: Vec<String> = crate::shell_tokenize::shell_tokenize(cmd_str).map_err(|e| JError::ConfigInvalid {
+        msg: format!("alias '{}': at position {}: {}", a, e.pos, e.msg),
+    })?;
     argv.extend(alias_args.iter().cloned());
     Ok(Some(argv))
 }

@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 pub fn build_shim_script(exe_abs: &str, shell: &str) -> String {
     let exe_q = quote(exe_abs);
     let shell_q = quote(shell);
-    format!(
+    let mut s = format!(
         r#"j() {{
     if [ "$#" -eq 0 ]; then
         "{exe}" :help
@@ -33,6 +33,38 @@ pub fn build_shim_script(exe_abs: &str, shell: &str) -> String {
 "#,
         exe = exe_q,
         shell = shell_q
+    );
+    if shell == "bash" {
+        s.push('\n');
+        s.push_str(&build_bash_completion(exe_abs));
+        s.push_str("\ncomplete -F _j_complete_bash j 2>/dev/null || true\n");
+    } else if shell == "zsh" {
+        s.push('\n');
+        s.push_str(&build_zsh_completion(exe_abs));
+        s.push('\n');
+        s.push_str("compdef _j j 2>/dev/null || true\n");
+    }
+    s
+}
+
+pub fn build_bash_completion(exe_abs: &str) -> String {
+    let exe_q = quote(exe_abs);
+    format!(
+        r#"_j_complete_bash() {{
+    local candidates
+    candidates=$("{exe}" :complete bash "$COMP_POINT" "$COMP_LINE")
+    local IFS=$'\n'
+    COMPREPLY=($candidates)
+}}"#,
+        exe = exe_q
+    )
+}
+
+pub fn build_zsh_completion(exe_abs: &str) -> String {
+    let exe_q = quote(exe_abs);
+    format!(
+        "_j() {{\n    local line=\"${{BUFFER}}\"\n    local cursor=\"$CURSOR\"\n    local IFS=$'\\n'\n    local candidates\n    candidates=($(\"{exe}\" :complete zsh \"$cursor\" \"$line\"))\n    compadd -Q -- \"${{candidates[@]}}\"\n}}",
+        exe = exe_q,
     )
 }
 

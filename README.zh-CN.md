@@ -149,6 +149,86 @@ j :help | --help | -h                      # 显示帮助（末尾追加 roots �
 j :version | --version                     # 显示版本号
 ```
 
+## macOS 使用说明
+
+### 构建
+
+```sh
+cargo build --release
+# 产物：target/release/j
+```
+
+### 安装
+
+把 `j` 放到稳定目录（例如 `/usr/local/bin/j`），然后安装 shim：
+
+```sh
+/usr/local/bin/j :install zsh     # 写入 ~/.zshrc
+/usr/local/bin/j :install bash    # 写入 ~/.bashrc
+```
+
+打开新终端窗口即可使用。shim 内部写入了 `j` 的绝对路径——如果移动了二进制文件，需重新执行 `:install`。
+
+### Tab 补全
+
+- **zsh**：`:install zsh` 同时安装 `_j` 补全函数和 `compdef` 注册。新开 shell 后生效。
+- **bash**：`:install bash` 同时安装 `_j_complete_bash` 补全函数和 `complete -F` 注册。新开 shell 后生效。
+- 补全覆盖：根名、子符号、冒号子命令、别名、`:add` 目录回退。
+
+### 配置
+
+配置文件位置：`~/.config/j/config.jsonc`（可通过 `J_CONFIG` 环境变量覆盖）。
+
+```jsonc
+{
+  "commands": {
+    "c": "code",
+    "o": "open .",
+    "g": "git status"
+  },
+  "templates": { /* 与 Windows 相同 */ },
+  "roots": {
+    "proj": { "path": "/Users/me/projects/myproject" }
+  }
+}
+```
+
+根路径使用 POSIX 风格绝对路径（如 `/Users/me/work`）。Windows 风格路径（`C:\...`）同样有效，保留反斜杠分隔符。
+
+### 别名中的引号
+
+别名命令支持类 shell 的引号处理：
+
+```jsonc
+"commands": {
+  "vsc": "open -a \"Visual Studio Code\"",
+  "echo": "echo 'hello world'"
+}
+```
+
+### 自定义 Profile 路径
+
+POSIX shell 支持指定自定义 profile：
+
+```sh
+j :install zsh --profile ~/.my_custom_zshrc
+j :uninstall zsh --profile ~/.my_custom_zshrc
+```
+
+### 常见问题
+
+| 现象 | 解决方法 |
+|-----|---------|
+| `command not found: j` | 确保二进制文件在 PATH 稳定目录中，或先安装 shim |
+| shim 未加载 | 打开新终端；确认对应的 profile 文件（`~/.zshrc`、`~/.bashrc`）被 source |
+| 移动二进制文件后失效 | 重新执行 `:install`——shim 中写入了绝对路径 |
+| Tab 补全不生效 | `:install` 后新开 shell；zsh 下确保 `compinit` 正常运行 |
+
+### 已知限制
+
+- POSIX shell 无 PowerShell 交互式候选 UI（直接运行 `j` 无参数会显示帮助）。
+- 别名命令在 Rust 端做词法分析后发射，不会在 shell 中 `eval`。
+
 ## 卸载
 
 ```powershell

@@ -8,3 +8,4 @@ pub mod cli;
 pub mod subcmd;
 pub mod install;
 pub mod complete;
+pub mod shell_tokenize;
