@@ -210,12 +210,13 @@ fn build_bash_completion_generates_function() {
 }
 
 #[test]
+#[cfg(unix)]
 fn default_profile_when_no_flag() {
     let args: Vec<String> = vec!["zsh".to_string()];
 
     install::install(Path::new(""), &args).unwrap();
 
-    let home = std::env::var("HOME").unwrap();
+    let Ok(home) = std::env::var("HOME") else { return };
     let default = std::path::PathBuf::from(&home).join(".zshrc");
     if default.exists() {
         let s = std::fs::read_to_string(&default).unwrap();
