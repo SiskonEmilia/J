@@ -17,9 +17,11 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            artifact: target/release/j.exe
+            target: x86_64-pc-windows-msvc
+            ext: .exe
           - os: macos-latest
-            artifact: target/release/j
+            target: aarch64-apple-darwin
+            ext: ""
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -30,8 +32,14 @@ jobs:
       - run: cargo build --release
       - run: cargo test
 
+      - name: Rename binary
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          cp target/release/j${{ matrix.ext }} "j-${VERSION}-${{ matrix.target }}${{ matrix.ext }}"
+
       - name: Upload release artifact
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ matrix.artifact }}
+          files: j-*${{ matrix.target }}*
           generate_release_notes: true
