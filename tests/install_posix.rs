@@ -210,21 +210,28 @@ fn build_bash_completion_generates_function() {
 }
 
 #[test]
-#[cfg(unix)]
 fn default_profile_when_no_flag() {
+    let dir = tempdir().unwrap();
+    let old_home = std::env::var("HOME").ok();
+    std::env::set_var("HOME", dir.path());
+
     let args: Vec<String> = vec!["zsh".to_string()];
 
     install::install(Path::new(""), &args).unwrap();
 
-    let Ok(home) = std::env::var("HOME") else { return };
-    let default = std::path::PathBuf::from(&home).join(".zshrc");
-    if default.exists() {
-        let s = std::fs::read_to_string(&default).unwrap();
-        assert!(s.contains("# region j-shim"));
+    let default = dir.path().join(".zshrc");
+    assert!(default.exists());
+    let s = std::fs::read_to_string(&default).unwrap();
+    assert!(s.contains("# region j-shim"));
 
-        install::uninstall(Path::new(""), &args).unwrap();
+    install::uninstall(Path::new(""), &args).unwrap();
 
-        let s2 = std::fs::read_to_string(&default).unwrap();
-        assert!(!s2.contains("# region j-shim"));
+    let s2 = std::fs::read_to_string(&default).unwrap();
+    assert!(!s2.contains("# region j-shim"));
+
+    if let Some(h) = old_home {
+        std::env::set_var("HOME", h);
+    } else {
+        std::env::remove_var("HOME");
     }
 }
