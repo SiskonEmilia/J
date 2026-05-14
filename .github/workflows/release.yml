@@ -12,10 +12,20 @@ env:
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact: target/release/j.exe
+          - os: macos-latest
+            artifact: target/release/j
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
       - uses: Swatinem/rust-cache@v2
       - run: cargo build --release
       - run: cargo test
@@ -23,5 +33,5 @@ jobs:
       - name: Upload release artifact
         uses: softprops/action-gh-release@v2
         with:
-          files: target/release/j.exe
+          files: ${{ matrix.artifact }}
           generate_release_notes: true
