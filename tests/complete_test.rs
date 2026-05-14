@@ -63,6 +63,12 @@ fn colon_tpl_rm_completes_template_names() {
 }
 
 #[test]
+fn install_completes_posix_shells() {
+    let v = suggest("j :install z");
+    assert_eq!(v, vec!["zsh".to_string()]);
+}
+
+#[test]
 fn add_prefers_symbol_completion_before_path_completion() {
     let v = suggest("j :add d3 s");
     assert!(v.iter().any(|s| s == "sd"));
@@ -73,9 +79,10 @@ fn add_prefers_symbol_completion_before_path_completion() {
 fn add_completes_relative_directories_under_resolved_symbol_path() {
     let dir = tempdir().unwrap();
     let root = dir.path().join("root");
-    std::fs::create_dir_all(root.join("docs\\notes\\drafts")).unwrap();
-    std::fs::create_dir_all(root.join("docs\\notes\\done")).unwrap();
-    std::fs::write(root.join("docs\\notes\\todo.txt"), "x").unwrap();
+    std::fs::create_dir_all(root.join("docs").join("notes").join("drafts")).unwrap();
+    std::fs::create_dir_all(root.join("docs").join("notes").join("done")).unwrap();
+    std::fs::write(root.join("docs").join("notes").join("todo.txt"), "x").unwrap();
+    let child_path = format!("docs{}notes", std::path::MAIN_SEPARATOR);
 
     let cfg_src = format!(
         r#"{{
@@ -83,18 +90,21 @@ fn add_completes_relative_directories_under_resolved_symbol_path() {
     "r": {{
       "path": "{}",
       "children": {{
-        "notes": {{ "path": "docs\\notes" }}
+        "notes": {{ "path": "{}" }}
       }}
     }}
   }}
 }}"#,
-        root.display().to_string().replace('\\', "\\\\")
+        root.display().to_string().replace('\\', "\\\\"),
+        child_path.replace('\\', "\\\\")
     );
     let cfg = load_from_str_validated(&cfg_src, "x").unwrap();
 
     let v = complete("j :add r notes d", "j :add r notes d".len(), &cfg);
-    assert!(v.iter().any(|s| s == "done\\"));
-    assert!(v.iter().any(|s| s == "drafts\\"));
+    let done = format!("done{}", std::path::MAIN_SEPARATOR);
+    let drafts = format!("drafts{}", std::path::MAIN_SEPARATOR);
+    assert!(v.iter().any(|s| s == &done));
+    assert!(v.iter().any(|s| s == &drafts));
     assert!(!v.iter().any(|s| s.contains("todo.txt")));
 }
 
@@ -102,8 +112,9 @@ fn add_completes_relative_directories_under_resolved_symbol_path() {
 fn add_completes_nested_relative_directories() {
     let dir = tempdir().unwrap();
     let root = dir.path().join("root");
-    std::fs::create_dir_all(root.join("docs\\notes\\drafts\\alpha")).unwrap();
-    std::fs::create_dir_all(root.join("docs\\notes\\drafts\\beta")).unwrap();
+    std::fs::create_dir_all(root.join("docs").join("notes").join("drafts").join("alpha")).unwrap();
+    std::fs::create_dir_all(root.join("docs").join("notes").join("drafts").join("beta")).unwrap();
+    let child_path = format!("docs{}notes", std::path::MAIN_SEPARATOR);
 
     let cfg_src = format!(
         r#"{{
@@ -111,21 +122,26 @@ fn add_completes_nested_relative_directories() {
     "r": {{
       "path": "{}",
       "children": {{
-        "notes": {{ "path": "docs\\notes" }}
+        "notes": {{ "path": "{}" }}
       }}
     }}
   }}
 }}"#,
-        root.display().to_string().replace('\\', "\\\\")
+        root.display().to_string().replace('\\', "\\\\"),
+        child_path.replace('\\', "\\\\")
     );
     let cfg = load_from_str_validated(&cfg_src, "x").unwrap();
 
-    let v = complete(
-        "j :add r notes drafts\\a",
-        "j :add r notes drafts\\a".len(),
-        &cfg,
+    let line = format!("j :add r notes drafts{}a", std::path::MAIN_SEPARATOR);
+    let v = complete(&line, line.len(), &cfg);
+    assert_eq!(
+        v,
+        vec![format!(
+            "drafts{}alpha{}",
+            std::path::MAIN_SEPARATOR,
+            std::path::MAIN_SEPARATOR
+        )]
     );
-    assert_eq!(v, vec!["drafts\\alpha\\".to_string()]);
 }
 
 #[test]

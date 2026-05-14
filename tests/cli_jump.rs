@@ -27,6 +27,18 @@ fn jump_cmd_emit() {
 }
 
 #[test]
+fn jump_zsh_emit() {
+    let (out, err, code) = run(&["--shell=zsh", "d3", "d", "-c", "--new-window"]);
+    assert_eq!(code, 0, "stderr={}", err);
+    let normalized = out.replace('\\', "/");
+    assert!(
+        normalized.contains("cd -- 'C:/projects/d3/Data'"),
+        "out={out}"
+    );
+    assert!(out.contains("'code' '--new-window'"), "out={out}");
+}
+
+#[test]
 fn current_dir_alias_ps() {
     let dir = tempdir().unwrap();
     let fixture =
@@ -47,10 +59,16 @@ fn current_dir_alias_ps() {
 
     let out = String::from_utf8(o.stdout).unwrap();
     let lines: Vec<&str> = out.lines().collect();
-    assert_eq!(
-        lines[0],
-        format!("Set-Location -LiteralPath '{}'", dir.path().display())
-    );
+    let prefix = "Set-Location -LiteralPath '";
+    let suffix = "'";
+    let actual_path_str = lines[0]
+        .strip_prefix(prefix)
+        .and_then(|s| s.strip_suffix(suffix))
+        .expect("cd line format");
+    let actual_canon = std::fs::canonicalize(actual_path_str)
+        .unwrap_or_else(|_| std::path::PathBuf::from(actual_path_str));
+    let expected_canon = std::fs::canonicalize(dir.path()).unwrap();
+    assert_eq!(actual_canon, expected_canon);
     assert_eq!(lines[1], "& 'code' '--new-window'");
 }
 

@@ -81,6 +81,24 @@ fn unknown_alias() {
 }
 
 #[test]
+fn jump_with_alias_double_quoted() {
+    let r = resolve(&["d3"], Some("vsc"), &[], &load()).unwrap();
+    assert_eq!(r.post_argv.as_ref().unwrap(), &["open", "-a", "Visual Studio Code"]);
+}
+
+#[test]
+fn jump_with_alias_single_quoted() {
+    let r = resolve(&["d3"], Some("sq"), &[], &load()).unwrap();
+    assert_eq!(r.post_argv.as_ref().unwrap(), &["echo", "hello world"]);
+}
+
+#[test]
+fn jump_with_alias_backslash_escaped() {
+    let r = resolve(&["d3"], Some("bse"), &[], &load()).unwrap();
+    assert_eq!(r.post_argv.as_ref().unwrap(), &["a b"]);
+}
+
+#[test]
 fn unknown_current_dir_alias() {
     let err = resolve_current_alias("nope", &[], &load(), "C:\\work".into()).unwrap_err();
     assert!(matches!(err, JError::UnknownAlias { .. }));

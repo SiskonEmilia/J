@@ -2,7 +2,6 @@ use crate::error::JError;
 use crate::merge::effective_children;
 use crate::model::{Config, Node};
 use std::collections::BTreeMap;
-use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct JumpResult {
@@ -25,7 +24,7 @@ pub fn resolve(
         available: c.roots.keys().cloned().collect(),
     })?;
 
-    let mut cur_path = PathBuf::from(&root.path);
+    let mut cur_path = root.path.clone();
     let mut breadcrumb: Vec<String> = vec![root_name.to_string()];
 
     // 我们改用双路径：先沿字面 Node 走，一旦走到"来自模板的合成节点"就切换到
@@ -46,7 +45,7 @@ pub fn resolve(
                     sym: sym.to_string(),
                     available: sources_listing(&view),
                 })?;
-                cur_path.push(&next.path);
+                push_path_segment(&mut cur_path, &next.path);
                 breadcrumb.push(sym.to_string());
                 // 是否存在字面 Node 对应？若在 n.children 里则继续走 Literal
                 cur = if let Some(child_node) = n.children.get(*sym) {
@@ -70,7 +69,7 @@ pub fn resolve(
                             .collect(),
                     })?
                     .clone();
-                cur_path.push(&next.path);
+                push_path_segment(&mut cur_path, &next.path);
                 breadcrumb.push(sym.to_string());
                 cur = Cursor::Synth(next);
             }
@@ -80,7 +79,7 @@ pub fn resolve(
     let post_argv = resolve_alias_argv(alias, alias_args, c)?;
 
     Ok(JumpResult {
-        abs_path: cur_path.to_string_lossy().into_owned(),
+        abs_path: cur_path,
         post_argv,
     })
 }
@@ -110,7 +109,9 @@ fn resolve_alias_argv(
         name: a.to_string(),
         available: c.commands.keys().cloned().collect(),
     })?;
-    let mut argv: Vec<String> = cmd_str.split_whitespace().map(String::from).collect();
+    let mut argv: Vec<String> = crate::shell_tokenize::shell_tokenize(cmd_str).map_err(|e| JError::ConfigInvalid {
+        msg: format!("alias '{}': at position {}: {}", a, e.pos, e.msg),
+    })?;
     argv.extend(alias_args.iter().cloned());
     Ok(Some(argv))
 }
@@ -121,4 +122,31 @@ fn sources_listing(
     view.iter()
         .map(|(k, v)| (k.clone(), Some(v.source.clone())))
         .collect()
+}
+
+fn push_path_segment(base: &mut String, segment: &str) {
+    if segment.is_empty() {
+        return;
+    }
+    let sep = preferred_separator(base);
+    if !base.ends_with(['\\', '/']) {
+        base.push(sep);
+    }
+    base.push_str(segment.trim_start_matches(['\\', '/']));
+}
+
+fn preferred_separator(path: &str) -> char {
+    if is_windows_drive_absolute(path) || path.contains('\\') {
+        '\\'
+    } else {
+        '/'
+    }
+}
+
+fn is_windows_drive_absolute(path: &str) -> bool {
+    let bytes = path.as_bytes();
+    bytes.len() >= 3
+        && bytes[0].is_ascii_alphabetic()
+        && bytes[1] == b':'
+        && (bytes[2] == b'\\' || bytes[2] == b'/')
 }

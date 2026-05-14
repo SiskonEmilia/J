@@ -1,8 +1,11 @@
 {
   "commands": {
-    "c":  "code",
-    "cc": "claude",
-    "g":  "git status"
+    "c":   "code",
+    "cc":  "claude",
+    "g":   "git status",
+    "vsc": "open -a \"Visual Studio Code\"",
+    "sq":  "echo 'hello world'",
+    "bse": "a\\ b"
   },
   "templates": {
     "uProject": {

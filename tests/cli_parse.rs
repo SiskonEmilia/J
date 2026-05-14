@@ -70,6 +70,20 @@ fn shell_flag_strips() {
 }
 
 #[test]
+fn zsh_shell_flag_is_posix() {
+    let v = parse(&["--shell=zsh", "d3"]).unwrap();
+    match v {
+        Invocation::Jump {
+            positional, shell, ..
+        } => {
+            assert_eq!(positional, vec!["d3"]);
+            assert_eq!(shell, Some(Shell::Posix));
+        }
+        _ => panic!(),
+    }
+}
+
+#[test]
 fn subcommand_colon_prefix() {
     let v = parse(&[":list", "d3"]).unwrap();
     assert!(matches!(v, Invocation::Subcmd { name, args } if name == "list" && args == vec!["d3"]));

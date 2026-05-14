@@ -63,9 +63,11 @@ impl EnvWriter for WinRegEnvWriter {
         // HKCU\Environment is per-user and auto-created by Windows; this
         // should never fail in a healthy profile, but we surface the error
         // so ensure_path_contains doesn't clobber an unreadable PATH.
-        let env = hkcu.open_subkey("Environment").map_err(|e| JError::InstallError {
-            msg: format!("open HKCU\\Environment: {}", e),
-        })?;
+        let env = hkcu
+            .open_subkey("Environment")
+            .map_err(|e| JError::InstallError {
+                msg: format!("open HKCU\\Environment: {}", e),
+            })?;
         match env.get_value::<String, _>("Path") {
             Ok(v) => Ok(v),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(String::new()),
@@ -114,6 +116,7 @@ fn broadcast_settingchange() {
     }
 }
 
-pub mod region;
-pub mod powershell;
 pub mod cmd;
+pub mod posix;
+pub mod powershell;
+pub mod region;

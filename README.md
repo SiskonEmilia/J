@@ -1,8 +1,8 @@
-# j — Deterministic directory bookmarks for Windows
+# j — Deterministic directory bookmarks
 
 [中文文档](README.zh-CN.md)
 
-J is a deterministic directory bookmark tool for Windows shells (PowerShell and cmd). Define named project paths once, then jump to them with short, predictable commands. Unlike history-based tools such as zoxide or autojump, J does not learn or guess — it is for paths you already know and want to name. Ships as a single binary with no dependencies.
+J is a deterministic directory bookmark tool for Windows and macOS shells (PowerShell, cmd, zsh, bash, and sh). Define named project paths once, then jump to them with short, predictable commands. Unlike history-based tools such as zoxide or autojump, J does not learn or guess — it is for paths you already know and want to name. Ships as a single binary with no dependencies.
 
 ```
 j d3              # cd to the d3 root
@@ -24,18 +24,23 @@ j -g              # run `git status` in the current directory
    C:\tools\j\j.exe :install cmd
    ```
 
+   ```sh
+   /usr/local/bin/j :install zsh
+   ```
+
    - **PowerShell**: writes to both `WindowsPowerShell` (5.1) and `PowerShell` (7+) profiles.
    - **cmd**: generates `j.bat` in `%USERPROFILE%\.config\j\bin\` and adds it to the user PATH.
+   - **zsh/bash/sh**: writes a shim into `~/.zshrc`, `~/.bashrc`, or `~/.profile`.
 
 3. Open a new shell window.
 
 > **Tip**: The absolute path to `j.exe` is baked into the shim at install time. If you move the binary, re-run `:install`.
 
-You can also use `:init <powershell|cmd>` to print the shim script to stdout for manual embedding.
+You can also use `:init <powershell|cmd|zsh|bash|sh>` to print the shim script to stdout for manual embedding.
 
 ## Configuration
 
-Config file: `%USERPROFILE%\.config\j\config.jsonc` (override with the `J_CONFIG` env var).
+Config file: `%USERPROFILE%\.config\j\config.jsonc` on Windows or `~/.config/j/config.jsonc` on macOS/Linux (override with the `J_CONFIG` env var).
 
 ```jsonc
 {
@@ -117,18 +122,102 @@ j :tpl-rm [--force] <tpl>                  # delete template (--force if referen
 j :edit                                    # open config in $EDITOR / notepad
 j :check                                   # validate all paths exist
 j :config-path                             # print config file path
-j :install   <powershell|cmd>              # idempotent shim install
-j :uninstall <powershell|cmd>              # remove shim
-j :init      <powershell|cmd>              # print shim script to stdout
+j :install   <powershell|cmd|zsh|bash|sh>  # idempotent shim install
+j :uninstall <powershell|cmd|zsh|bash|sh>  # remove shim
+j :init      <powershell|cmd|zsh|bash|sh>  # print shim script to stdout
 j :help | --help | -h                      # show help
 j :version | --version                     # print version
 ```
+
+## macOS Usage
+
+### Building
+
+```sh
+cargo build --release
+# output: target/release/j
+```
+
+### Installation
+
+Place `j` in a stable directory (e.g. `/usr/local/bin/j`), then install the shim:
+
+```sh
+/usr/local/bin/j :install zsh     # writes to ~/.zshrc
+/usr/local/bin/j :install bash    # writes to ~/.bashrc
+```
+
+Open a new terminal window. The shim bakes in the absolute path to `j` — if you move the binary, re-run `:install`.
+
+### Tab Completion
+
+- **zsh**: `:install zsh` installs `_j` completion with `compdef`. Works after opening a new shell.
+- **bash**: `:install bash` installs `_j_complete_bash` via `complete -F`. Works after opening a new shell.
+- Completion covers root names, child symbols, colon subcommands, aliases, and `:add` directory fallback.
+
+### Configuration
+
+Config file: `~/.config/j/config.jsonc` (override with `J_CONFIG` env var).
+
+```jsonc
+{
+  "commands": {
+    "c": "code",
+    "o": "open .",
+    "g": "git status"
+  },
+  "templates": { /* same as Windows */ },
+  "roots": {
+    "proj": { "path": "/Users/me/projects/myproject" }
+  }
+}
+```
+
+Root paths use POSIX-style absolute paths (e.g. `/Users/me/work`). Windows-style roots (`C:\...`) are also valid and preserve backslash separators.
+
+### Alias Quoting
+
+Alias commands support shell-like quoting:
+
+```jsonc
+"commands": {
+  "vsc": "open -a \"Visual Studio Code\"",
+  "echo": "echo 'hello world'"
+}
+```
+
+### Custom Profile Path
+
+For POSIX shells you can specify a custom profile:
+
+```sh
+j :install zsh --profile ~/.my_custom_zshrc
+j :uninstall zsh --profile ~/.my_custom_zshrc
+```
+
+### Troubleshooting
+
+| Symptom | Fix |
+|---------|-----|
+| `command not found: j` | Ensure the binary is in a stable PATH directory, or install the shim |
+| Shim not loaded | Open a new terminal; verify the right profile file (`~/.zshrc`, `~/.bashrc`) is sourced |
+| Binary moved after install | Re-run `:install` — the shim bakes in the absolute path |
+| Tab completion not working | Open a new shell after `:install`; for zsh, ensure `compinit` runs |
+
+### Known Limitations
+
+- POSIX shells do not have the PowerShell interactive candidate UI (run `j` with no args to see help instead).
+- Alias commands are tokenized before shell emission — not `eval`'d.
 
 ## Uninstallation
 
 ```powershell
 C:\tools\j\j.exe :uninstall powershell
 C:\tools\j\j.exe :uninstall cmd
+```
+
+```sh
+/usr/local/bin/j :uninstall zsh
 ```
 
 ## Design

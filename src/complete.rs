@@ -1,7 +1,7 @@
 use crate::merge::effective_children;
 use crate::model::Config;
 use crate::resolve::resolve;
-use std::path::{Path, PathBuf};
+use std::path::{Path, PathBuf, MAIN_SEPARATOR};
 
 const COMMON_SUBCMDS: &[&str] = &[
     ":list",
@@ -81,7 +81,7 @@ pub fn complete_rich(line: &str, cursor: usize, cfg: &Config) -> Vec<(String, St
     }
     if let Some(_cmd @ (":install" | ":uninstall" | ":init")) = after_j.first().copied() {
         if cur_idx == 1 {
-            return ["powershell", "cmd"]
+            return ["powershell", "cmd", "zsh", "bash", "sh"]
                 .iter()
                 .filter(|s| s.starts_with(partial))
                 .map(|s| (s.to_string(), String::new()))
@@ -246,7 +246,8 @@ fn resolved_abs_dir(root_name: &str, syms: &[&str], cfg: &Config) -> Option<Path
 }
 
 fn complete_dir_fragment(base_dir: &Path, partial: &str) -> Vec<String> {
-    let partial_path = Path::new(partial);
+    let normalized_partial = normalize_path_fragment(partial);
+    let partial_path = Path::new(&normalized_partial);
     let (scan_dir, prefix, name_prefix) = if partial.is_empty() {
         (base_dir.to_path_buf(), String::new(), String::new())
     } else if partial_path.is_absolute() {
@@ -273,15 +274,15 @@ fn complete_dir_fragment(base_dir: &Path, partial: &str) -> Vec<String> {
         if !name.to_ascii_lowercase().starts_with(&name_prefix_lower) {
             continue;
         }
-        out.push(format!("{}{}\\", prefix, name));
+        out.push(format!("{}{}{}", prefix, name, MAIN_SEPARATOR));
     }
     out.sort();
     out
 }
 
 fn split_relative_completion(base_dir: &Path, partial: &Path) -> (PathBuf, String, String) {
-    let raw = partial.to_string_lossy().replace('/', "\\");
-    if raw.ends_with('\\') {
+    let raw = display_fragment(partial);
+    if raw.ends_with(MAIN_SEPARATOR) {
         return (base_dir.join(partial), raw, String::new());
     }
     let parent = partial.parent().filter(|p| !p.as_os_str().is_empty());
@@ -292,8 +293,9 @@ fn split_relative_completion(base_dir: &Path, partial: &Path) -> (PathBuf, Strin
     let prefix = match parent {
         Some(p) => {
             let mut s = p.to_string_lossy().replace('/', "\\");
-            if !s.ends_with('\\') {
-                s.push('\\');
+            s = normalize_path_fragment(&s);
+            if !s.ends_with(MAIN_SEPARATOR) {
+                s.push(MAIN_SEPARATOR);
             }
             s
         }
@@ -307,14 +309,14 @@ fn split_relative_completion(base_dir: &Path, partial: &Path) -> (PathBuf, Strin
 }
 
 fn split_absolute_completion(partial: &Path) -> (PathBuf, String, String) {
-    let raw = partial.to_string_lossy().replace('/', "\\");
-    if raw.ends_with('\\') {
+    let raw = display_fragment(partial);
+    if raw.ends_with(MAIN_SEPARATOR) {
         return (PathBuf::from(&raw), raw, String::new());
     }
     let parent = partial.parent().unwrap_or_else(|| Path::new(&raw));
-    let mut prefix = parent.to_string_lossy().replace('/', "\\");
-    if !prefix.is_empty() && !prefix.ends_with('\\') {
-        prefix.push('\\');
+    let mut prefix = display_fragment(parent);
+    if !prefix.is_empty() && !prefix.ends_with(MAIN_SEPARATOR) {
+        prefix.push(MAIN_SEPARATOR);
     }
     let name_prefix = partial
         .file_name()
@@ -325,4 +327,16 @@ fn split_absolute_completion(partial: &Path) -> (PathBuf, String, String) {
 
 fn looks_like_path_fragment(s: &str) -> bool {
     s.contains('\\') || s.contains('/') || s.contains('.') || s.contains(':')
+}
+
+fn normalize_path_fragment(s: &str) -> String {
+    if MAIN_SEPARATOR == '\\' {
+        s.replace('/', "\\")
+    } else {
+        s.replace('\\', "/")
+    }
+}
+
+fn display_fragment(path: &Path) -> String {
+    normalize_path_fragment(&path.to_string_lossy())
 }
