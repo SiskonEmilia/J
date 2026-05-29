@@ -2,6 +2,10 @@
 
 [中文文档](README.zh-CN.md)
 
+<p align="center">
+  <img src="assets/j-demo.png" alt="j — jump to any project and launch Claude Code in one command" width="760">
+</p>
+
 J is a deterministic directory bookmark tool for Windows and macOS shells (PowerShell, cmd, zsh, bash, and sh). Define named project paths once, then jump to them with short, predictable commands. Unlike history-based tools such as zoxide or autojump, J does not learn or guess — it is for paths you already know and want to name. Ships as a single binary with no dependencies.
 
 ```

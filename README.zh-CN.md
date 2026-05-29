@@ -1,5 +1,11 @@
 # j — 确定性目录书签工具
 
+[English](README.md)
+
+<p align="center">
+  <img src="assets/j-demo.png" alt="j — 一条命令跳到项目目录并启动 Claude Code" width="760">
+</p>
+
 J 是一个面向 Windows 和 macOS shell（PowerShell / cmd / zsh / bash / sh）的确定性目录书签工具。定义一次项目路径，之后用简短、可预测的命令跳转。与 zoxide、autojump 等基于历史的工具不同，J 不学习、不猜测——它只管理你明确命名的路径。单文件可执行，无依赖。
 
 ## 安装

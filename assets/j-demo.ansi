@@ -1,0 +1,14 @@
+[1;38;5;114m# j[0m [38;5;245m— jump to any project and launch your tool, in one command[0m
+
+[38;5;245mPS [38;5;75mC:\[38;5;245m>[0m [1;38;5;114mj[0m [38;5;253md3 d -cc[0m   [38;5;245m# → D:\projects\v1d3\Data, then start Claude Code[0m
+
+[38;2;215;119;87m✻[0m Welcome to [38;5;253mClaude Code[0m
+
+[38;5;245m  /help for help, /status for your current setup[0m
+
+[38;5;245m  cwd: D:\projects\v1d3\Data[0m
+
+[38;2;215;119;87m╭──────────────────────────────────────────────────────────╮[0m
+[38;2;215;119;87m│[0m [38;5;253m>[0m [38;5;240mTry "explain this project"[0m                             [38;2;215;119;87m│[0m
+[38;2;215;119;87m╰──────────────────────────────────────────────────────────╯[0m
+[38;5;245m  ? for shortcuts[0m
