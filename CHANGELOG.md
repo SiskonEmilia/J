@@ -2,7 +2,11 @@
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-06-14
+
 ### Fixed
+- `:alias` now rejects invalid alias names before writing config, preventing
+  entries like `"-cx"` that make later config loads fail.
 - Non-ASCII (e.g. CJK) directory names now work on Windows. `j.exe` emits UTF-8,
   but the shims previously decoded its output using the OEM console code page,
   mangling such paths:

@@ -1,6 +1,6 @@
 [package]
 name = "j"
-version = "0.3.0"
+version = "0.3.1"
 description = "Fast directory jump tool for Windows and macOS shells with nested symbol tree and reusable path templates"
 edition = "2021"
 license = "GPL-3.0-only"
