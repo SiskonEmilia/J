@@ -13,8 +13,8 @@ pub fn build_shim_script(exe_abs: &str) -> String {
     # paths — making `Set-Location` fail and listings unreadable. Force UTF-8 for
     # the duration of this call (covers the jump output, :list display, and the
     # interactive picker), then restore the previous encoding in finally.
-    $script:_jPrevEnc = $null
-    try {{ $script:_jPrevEnc = [Console]::OutputEncoding; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 }} catch {{}}
+    $_jPrevEnc = $null
+    try {{ $_jPrevEnc = [Console]::OutputEncoding; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 }} catch {{}}
     try {{
     function _jRun($toks) {{
         if (-not $toks -or $toks.Count -eq 0) {{ return }}
@@ -215,7 +215,7 @@ pub fn build_shim_script(exe_abs: &str) -> String {
         }}
     }}
     }} finally {{
-        if ($script:_jPrevEnc) {{ try {{ [Console]::OutputEncoding = $script:_jPrevEnc }} catch {{}} }}
+        if ($_jPrevEnc) {{ try {{ [Console]::OutputEncoding = $_jPrevEnc }} catch {{}} }}
     }}
 }}
 Register-ArgumentCompleter -CommandName j -ScriptBlock {{

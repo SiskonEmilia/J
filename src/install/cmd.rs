@@ -12,6 +12,10 @@ rem the console code page defaults to OEM (936/GBK, etc.), so `call`/`type` woul
 rem decode the temp script and listing output as the wrong charset and mangle
 rem non-ASCII paths. Capture the active code page, switch to UTF-8 (65001) for
 rem the duration, and restore it afterwards.
+rem Assumes chcp prints "<label>: <number>" with an ASCII colon, which holds on
+rem localized Windows incl. zh-CN ("活动代码页: 936"). If a locale ever used a
+rem non-ASCII colon, _J_CP would be empty and the restore below is a no-op (the
+rem console simply stays on UTF-8) -- benign, never a failure.
 for /f "tokens=2 delims=:" %%c in ('chcp') do set "_J_CP=%%c"
 set "_J_CP=!_J_CP: =!"
 chcp 65001 >nul

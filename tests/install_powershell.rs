@@ -51,7 +51,7 @@ fn shim_script_references_absolute_exe() {
         "shim must force UTF-8 output encoding for CJK path support"
     );
     assert!(
-        body.contains("[Console]::OutputEncoding = $script:_jPrevEnc"),
+        body.contains("[Console]::OutputEncoding = $_jPrevEnc"),
         "shim must restore the previous output encoding"
     );
 }
