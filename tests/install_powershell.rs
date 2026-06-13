@@ -44,6 +44,16 @@ fn shim_script_references_absolute_exe() {
         body.contains("_jBuf"),
         "interactive mode must maintain input buffer"
     );
+    // UTF-8: force UTF-8 console output encoding so CJK paths read back from
+    // j.exe survive PowerShell 5.1's OEM-code-page default, and restore it.
+    assert!(
+        body.contains("[Console]::OutputEncoding = [System.Text.Encoding]::UTF8"),
+        "shim must force UTF-8 output encoding for CJK path support"
+    );
+    assert!(
+        body.contains("[Console]::OutputEncoding = $_jPrevEnc"),
+        "shim must restore the previous output encoding"
+    );
 }
 
 #[test]

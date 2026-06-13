@@ -14,6 +14,7 @@ impl std::fmt::Display for CstDoc {
 }
 
 pub fn load_cst(src: &str) -> Result<CstDoc, JError> {
+    let src = crate::config::strip_bom(src);
     let root = CstRootNode::parse(
         src,
         &ParseOptions {

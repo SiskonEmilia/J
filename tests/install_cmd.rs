@@ -12,6 +12,10 @@ fn build_shim_bat_has_exe() {
     // otherwise display it with `type` so subcommand text is not run as batch.
     assert!(s.contains("findstr /b \"cd /d\""), "shim must check for cd /d prefix");
     assert!(s.contains("type \"%_J_TMP%\""), "shim must display non-script output");
+    // UTF-8: switch the console code page so CJK paths in the temp script and
+    // `type` output decode correctly, then restore the original code page.
+    assert!(s.contains("chcp 65001"), "shim must switch to UTF-8 code page");
+    assert!(s.contains("chcp %_J_CP%"), "shim must restore the original code page");
 }
 
 #[test]

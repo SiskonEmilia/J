@@ -18,8 +18,14 @@ TARGET_DIR="/tmp/j_e2e_target"
 rm -rf "$TARGET_DIR"
 mkdir -p "$TARGET_DIR"
 
-echo "[INFO] Adding test project..."
+# Regression: non-ASCII (CJK) directory names must round-trip through the
+# config and the shim without corruption.
+CJK_DIR="$WORKSPACE/项目/代码"
+mkdir -p "$CJK_DIR"
+
+echo "[INFO] Adding test projects..."
 "$EXE" :add testproj "$TARGET_DIR"
+"$EXE" :add cjkproj "$CJK_DIR"
 
 TEMP_HOME="$WORKSPACE/home"
 mkdir -p "$TEMP_HOME"
@@ -57,10 +63,19 @@ else
   echo "[FAIL] expected \$PWD=$TARGET_DIR got $PWD"
   exit 1
 fi
+
+# Test: jump into a CJK-named directory
+j cjkproj
+if [ "$PWD" = "$CJK_DIR" ]; then
+  echo "[OK] j cjkproj changed \$PWD to $CJK_DIR"
+else
+  echo "[FAIL] expected \$PWD=$CJK_DIR got $PWD"
+  exit 1
+fi
 ZSH_EOF
 
 echo "[INFO] Running smoke test..."
 HOME="$TEMP_HOME" J_EXE="$EXE" J_CONFIG="$J_CONFIG" \
-  TARGET_DIR="$TARGET_DIR" /bin/zsh -f "$TEST_SCRIPT"
+  TARGET_DIR="$TARGET_DIR" CJK_DIR="$CJK_DIR" /bin/zsh -f "$TEST_SCRIPT"
 
 echo "ALL PASSED."

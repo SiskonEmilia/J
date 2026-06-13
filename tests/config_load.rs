@@ -14,6 +14,15 @@ fn load_fixture_ok() {
 }
 
 #[test]
+fn load_strips_utf8_bom() {
+    // Notepad and other Windows editors save UTF-8 with a leading BOM; the
+    // parser must tolerate it (and handle CJK paths in the same file).
+    let src = "\u{feff}{\"roots\":{\"proj\":{\"path\":\"C:\\\\项目\\\\代码\"}}}";
+    let c = load_from_str(src, "bom.jsonc").expect("BOM-prefixed config should load");
+    assert_eq!(c.roots.get("proj").unwrap().path, "C:\\项目\\代码");
+}
+
+#[test]
 fn load_missing_roots_is_config_invalid() {
     use j::error::JError;
     let err = load_from_str("{}", "x.jsonc").unwrap_err();

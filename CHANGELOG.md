@@ -1,5 +1,18 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- Non-ASCII (e.g. CJK) directory names now work on Windows. `j.exe` emits UTF-8,
+  but the shims previously decoded its output using the OEM console code page,
+  mangling such paths:
+  - **cmd** shim switches the console to UTF-8 (`chcp 65001`) around the
+    `call`/`type` step and restores the original code page afterwards.
+  - **PowerShell** shim forces `[Console]::OutputEncoding = UTF-8` for the
+    duration of each call (fixing Windows PowerShell 5.1) and restores it.
+- Config files saved with a UTF-8 BOM (e.g. by Notepad) now load instead of
+  failing to parse; the BOM is stripped on read.
+
 ## [0.3.0] - 2026-05-14
 
 ### Added

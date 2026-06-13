@@ -8,6 +8,14 @@ pub fn build_shim_script(exe_abs: &str) -> String {
     format!(
         r#"function j {{
     $script:_jExe = '{exe}'
+    # j.exe always emits UTF-8. Windows PowerShell 5.1 reads a child process's
+    # stdout using the OEM console code page, which mangles non-ASCII (e.g. CJK)
+    # paths — making `Set-Location` fail and listings unreadable. Force UTF-8 for
+    # the duration of this call (covers the jump output, :list display, and the
+    # interactive picker), then restore the previous encoding in finally.
+    $_jPrevEnc = $null
+    try {{ $_jPrevEnc = [Console]::OutputEncoding; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 }} catch {{}}
+    try {{
     function _jRun($toks) {{
         if (-not $toks -or $toks.Count -eq 0) {{ return }}
         $o = (& $script:_jExe --shell=powershell @toks) -join "`n"
@@ -206,6 +214,9 @@ pub fn build_shim_script(exe_abs: &str) -> String {
             $cands = _jFetch; _jRedraw; _jDraw $cands $script:_jSelIdx
         }}
     }}
+    }} finally {{
+        if ($_jPrevEnc) {{ try {{ [Console]::OutputEncoding = $_jPrevEnc }} catch {{}} }}
+    }}
 }}
 Register-ArgumentCompleter -CommandName j -ScriptBlock {{
     param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
@@ -214,7 +225,13 @@ Register-ArgumentCompleter -CommandName j -ScriptBlock {{
     }} else {{
         $ln = $parameterName; $cur = [int]$wordToComplete
     }}
-    $out = @(& '{exe}' :complete powershell $cur $ln 2>$null)
+    $_jPrevEnc = $null
+    try {{ $_jPrevEnc = [Console]::OutputEncoding; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 }} catch {{}}
+    try {{
+        $out = @(& '{exe}' :complete powershell $cur $ln 2>$null)
+    }} finally {{
+        if ($_jPrevEnc) {{ try {{ [Console]::OutputEncoding = $_jPrevEnc }} catch {{}} }}
+    }}
     foreach ($x in $out) {{
         if ($x) {{ [System.Management.Automation.CompletionResult]::new($x, $x, 'ParameterValue', $x) }}
     }}

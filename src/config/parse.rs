@@ -5,6 +5,7 @@ use serde_json::Value;
 use std::collections::BTreeMap;
 
 pub fn load_from_str(src: &str, path: &str) -> Result<Config, JError> {
+    let src = crate::config::strip_bom(src);
     let value = parse_to_serde_value(src, &ParseOptions {
         allow_comments: true,
         allow_trailing_commas: true,
