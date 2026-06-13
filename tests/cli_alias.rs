@@ -1,12 +1,16 @@
 mod common;
 use common::exe;
+use std::fs;
 use std::process::Command;
 use tempfile::tempdir;
-use std::fs;
 
 fn seed(dir: &std::path::Path) -> std::path::PathBuf {
     let cfg = dir.join("config.jsonc");
-    fs::write(&cfg, r#"{"commands":{"c":"code"},"roots":{"d":{"path":"C:\\d"}}}"#).unwrap();
+    fs::write(
+        &cfg,
+        r#"{"commands":{"c":"code"},"roots":{"d":{"path":"C:\\d"}}}"#,
+    )
+    .unwrap();
     cfg
 }
 
@@ -18,7 +22,12 @@ fn alias_creates_config_when_missing() {
     let mut c = Command::new(exe());
     c.env("J_CONFIG", &cfg).args([":alias", "c", "code"]);
     let o = c.output().unwrap();
-    assert_eq!(o.status.code().unwrap(), 0, "stderr={:?}", String::from_utf8_lossy(&o.stderr));
+    assert_eq!(
+        o.status.code().unwrap(),
+        0,
+        "stderr={:?}",
+        String::from_utf8_lossy(&o.stderr)
+    );
 
     let s = fs::read_to_string(&cfg).unwrap();
     assert!(s.contains("\"c\""), "alias key missing: {s}");
@@ -58,4 +67,23 @@ fn rm_alias() {
     assert_eq!(c.status().unwrap().code().unwrap(), 0);
     let s = fs::read_to_string(&cfg).unwrap();
     assert!(!s.contains("\"c\":"));
+}
+
+#[test]
+fn rejects_alias_name_with_leading_dash() {
+    let dir = tempdir().unwrap();
+    let cfg = seed(dir.path());
+    let before = fs::read_to_string(&cfg).unwrap();
+
+    let mut c = Command::new(exe());
+    c.env("J_CONFIG", &cfg).args([":alias", "-cx", "codex"]);
+    let o = c.output().unwrap();
+
+    assert_eq!(o.status.code().unwrap(), 3);
+    let stderr = String::from_utf8_lossy(&o.stderr);
+    assert!(
+        stderr.contains("alias name '-cx' must start with [A-Za-z0-9_]"),
+        "stderr={stderr:?}"
+    );
+    assert_eq!(fs::read_to_string(&cfg).unwrap(), before);
 }

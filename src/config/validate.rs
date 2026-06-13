@@ -65,7 +65,7 @@ fn validate_templates_ref(refs: &[String], c: &Config, ctx: &str) -> Result<(), 
     Ok(())
 }
 
-fn check_symbol(name: &str, kind: &str) -> Result<(), JError> {
+pub(crate) fn check_symbol(name: &str, kind: &str) -> Result<(), JError> {
     let mut chars = name.chars();
     let first = chars.next().ok_or_else(|| JError::ConfigInvalid {
         msg: format!("{} cannot be empty", kind),
